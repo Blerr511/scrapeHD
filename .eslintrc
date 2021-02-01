@@ -1,0 +1,15 @@
+{
+    "root": true,
+    "env": {
+        "es6": false,
+        "browser": true
+    },
+    "parserOptions": {
+        "ecmaVersion": 2020
+    },
+    "rules": {
+        "no-unused-vars": ["warn"],
+        "no-var": ["off"],
+        "one-var": ["off"]
+    }
+}
