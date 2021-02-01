@@ -15,11 +15,14 @@ const scrapePrice = async (id) =>
                     ?.textContent === 'Access Denied'
             )
                 return Promise.reject('Access Denied please use proxy');
-            const price = dom.window.document.body.querySelector(
-                '.price>div>span:nth-of-type(2)'
+            const price = dom.window.document.body.querySelectorAll(
+                '.price>div>span'
             );
-            if (!price)
-                return Promise.reject("Model or it' price not found");
-            return Number(price.textContent);
+            if (!price?.length)
+                return Promise.reject("Model or it's price not found");
+            return (
+                Number(price[1].textContent) +
+                0.01 * Number(price[2].textContent)
+            );
         });
 module.exports = scrapePrice;

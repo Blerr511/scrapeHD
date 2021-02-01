@@ -6,7 +6,7 @@ const xl = require('excel4node');
 const getItem = promisify(redisClient.get).bind(redisClient);
 const setItem = promisify(redisClient.set).bind(redisClient);
 const updateInterval = 3600 * 1000;
-
+redisClient.flushall();
 const updateItem = async (model) => {
     try {
         const price = await scrapePrice(model);
@@ -15,8 +15,12 @@ const updateItem = async (model) => {
         await setItem(model, JSON.stringify(data));
         return { model, price, updatedAt };
     } catch (error) {
-        setItem(model, JSON.stringify({ error }));
-        return Promise.resolve({ model, error, updatedAt: Date.now() });
+        setItem(model, JSON.stringify({ error: error.message || error }));
+        return Promise.resolve({
+            model,
+            error: error.message || error,
+            updatedAt: Date.now(),
+        });
     }
 };
 
