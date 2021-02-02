@@ -25,7 +25,8 @@
         "socket.io": "^3.1.0"
     },
     "scripts": {
-        "start": "set NODE_PATH=./src&&nodemon -r dotenv-flow/config"
+        "start": "set NODE_PATH=./src&&nodemon -r dotenv-flow/config",
+        "heroku-start": "export NODE_ENV=production&& node"
     },
     "devDependencies": {
         "dotenv-flow": "^3.2.0",
