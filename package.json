@@ -1,5 +1,5 @@
 {
-    "name": "Home Depot price list",
+    "name": "HomeDepotPriceList",
     "version": "0.0.1",
     "description": "",
     "main": "backend/src/app.js",
