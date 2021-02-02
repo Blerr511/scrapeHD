@@ -1,0 +1,26 @@
+{
+    "name": "chat",
+    "version": "1.0.0",
+    "description": "",
+    "main": "server/app.js",
+    "scripts": {
+        "postinstall": "cd frontend && yarn && cd ../backend && yarn",
+        "start": "cd backend && yarn start",
+        "build": "cd frontend && yarn run build && move ./build ../backend/build",
+        "heroku-postbuild": "cd frontend && yarn run build && mv ./build ../backend/build",
+        "heroku-start": "cd backend && yarn run heroku-start",
+        "server": "cd backend && yarn start",
+        "client": "cd frontend && yarn start",
+        "lint": "eslint ."
+    },
+    "repository": {
+        "type": "git",
+        "url": "git+https://github.com/Blerr511/scrapeHD"
+    },
+    "author": "Blerr",
+    "license": "ISC",
+    "engines": {
+        "node": "14.x",
+        "yarn": "1.22.4"
+    }
+}
