@@ -4,10 +4,9 @@ const io = require('services/socket');
 const server = http.createServer(app);
 io.attach(server);
 const port = process.env.PORT || 8080;
-const host = process.env.HOST || 'localhost';
 
-server.listen(port, host, () => {
-    console.log(`Listening ${host}:${port}`);
+server.listen(port, () => {
+    console.log(`Listening ${port}`);
 });
 
 module.exports = server;
