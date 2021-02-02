@@ -64,6 +64,7 @@ const App = () => {
         <div className="App">
             <input
                 type="file"
+                accept=".csv"
                 ref={$input}
                 onChange={(e) =>
                     e.target.files.length && handleUploadFile(e.target.files[0])
@@ -87,7 +88,7 @@ const App = () => {
                             }
                         }}>
                         <p>
-                            Drag files here or{' '}
+                            Drag .csv here or{' '}
                             <span
                                 className="upload__button"
                                 onClick={() => $input.current?.click()}>
