@@ -26,7 +26,7 @@
     },
     "scripts": {
         "start": "set NODE_PATH=./src&&nodemon -r dotenv-flow/config",
-        "heroku-start": "export NODE_ENV=production&& node"
+        "heroku-start": "export NODE_ENV=production&&NODE_PATH=./src&& node src/app.js"
     },
     "devDependencies": {
         "dotenv-flow": "^3.2.0",
