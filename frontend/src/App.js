@@ -137,7 +137,7 @@ const App = () => {
                     <div className="resultContainer">
                         {result && (
                             <div className="downloadContainer">
-                                <a href={result}>Download .xlsx</a>
+                                <a href={result} download>Download .xlsx</a>
                             </div>
                         )}
                         {resultUpdatedAt && (
