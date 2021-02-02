@@ -1,20 +1,17 @@
-import React, { useRef, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import './App.css';
-const urlEncode = (data) => {
-    let formBody = [];
-    for (const property in data) {
-        const encodedKey = encodeURIComponent(property);
-        const encodedValue = encodeURIComponent(data[property]);
-        formBody.push(encodedKey + '=' + encodedValue);
-    }
-    formBody = formBody.join('&');
+import Loading from './components/Loading';
+import Progress from './components/Progress';
+import socket from './helpers/socket/createConnection';
 
-    return formBody;
-};
-function App() {
+const App = () => {
     const $input = useRef(null);
     const [file, setFile] = useState(null);
     const [error, setError] = useState(null);
+    const [progress, setProgress] = useState({ current: 0, total: 0 });
+    const [result, setResult] = useState(null);
+    const [resultUpdatedAt, setResultUpdatedAt] = useState(null);
+    const [uploading, setUploading] = useState(false);
     const handleUploadFile = (file) => {
         const fileType = file.name.split('.')[1];
         if (fileType !== 'csv') {
@@ -23,6 +20,7 @@ function App() {
             return;
         } else if (error) setError(null);
         setFile(file);
+        setUploading(true);
         const reader = new FileReader();
         reader.onload = function (event) {
             const res = event.target.result;
@@ -35,6 +33,7 @@ function App() {
                         String(el).toLowerCase() !== 'reference'
                     );
                 });
+            setResult(null);
             fetch('/api/updateData', {
                 method: 'POST',
                 headers: {
@@ -43,10 +42,24 @@ function App() {
                 body: JSON.stringify({ data: idList }),
             })
                 .then((data) => data.json())
-                .then(console.log);
+                .then(() => setUploading(false))
+                .catch((error) => {
+                    setUploading(false);
+                    setError(String(error?.message || error));
+                });
         };
         reader.readAsText(file);
     };
+
+    useEffect(() => {
+        socket.on('updateProgress', setProgress);
+        socket.on('result', (data) => {
+            setResult(data.filePath);
+            if (data.updatedAt) setResultUpdatedAt(data.updatedAt);
+            else setResultUpdatedAt(null);
+        });
+    }, []);
+
     return (
         <div className="App">
             <input
@@ -87,14 +100,22 @@ function App() {
                             <div className="file">
                                 <div className="file__name">
                                     <p>{file.name}</p>
-                                    <i className="fas fa-times" />
                                 </div>
-                                <div className="progress">
+                                {uploading && (
                                     <div
-                                        className="progress-bar bg-success progress-bar-striped progress-bar-animated"
-                                        style={{ width: '20%' }}
-                                    />
-                                </div>
+                                        style={{
+                                            display: 'flex',
+                                            justifyContent: 'center',
+                                            alignItems: 'center',
+                                        }}>
+                                        <Loading
+                                            style={{
+                                                width: 30,
+                                                height: 30,
+                                            }}
+                                        />
+                                    </div>
+                                )}
                             </div>
                         </div>
                     )}
@@ -105,19 +126,29 @@ function App() {
                                     <p>{error}</p>
                                     <i className="fas fa-times" />
                                 </div>
-                                <div className="progress">
-                                    <div
-                                        className="progress-bar bg-success progress-bar-striped progress-bar-animated"
-                                        style={{ width: '20%' }}
-                                    />
-                                </div>
                             </div>
                         </div>
                     )}
+                    <Progress
+                        current={progress.current}
+                        total={progress.total}
+                    />
+                    <div className="resultContainer">
+                        {result && (
+                            <div className="downloadContainer">
+                                <a href={result}>Download .xlsx</a>
+                            </div>
+                        )}
+                        {resultUpdatedAt && (
+                            <span className="lastUpdateWarning">{`Last update - ${new Date(
+                                resultUpdatedAt
+                            ).toLocaleString()}`}</span>
+                        )}
+                    </div>
                 </div>
             </div>
         </div>
     );
-}
+};
 
 export default App;
