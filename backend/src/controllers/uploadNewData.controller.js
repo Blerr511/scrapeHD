@@ -3,9 +3,10 @@ const redisClient = require('db/connect');
 const { promisify } = require('util');
 const io = require('services/socket');
 const createExcel = require('helpers/createExcel');
+
 const getItem = promisify(redisClient.get).bind(redisClient);
 const setItem = promisify(redisClient.set).bind(redisClient);
-const updateInterval = 3600 * 1000;
+const updateInterval = process.env.UPDATE_INTERVAL || 3600 * 1000;
 
 const updateItem = async (model) => {
     try {
