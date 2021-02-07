@@ -1,6 +1,6 @@
 const xl = require('excel4node');
 
-const createExcel = (priceList, path) => {
+const createExcel = async (priceList, path) => {
     var wb = new xl.Workbook({ dateFormat: 'm/d/yy hh:mm:ss' });
     var ws = wb.addWorksheet('Home Depot price list');
     ws.column(1).setWidth(15).freeze();
@@ -42,7 +42,12 @@ const createExcel = (priceList, path) => {
             updatedAt && ws.cell(row, 3).date(new Date(updatedAt));
         }
     });
-    wb.write(path);
+    return new Promise((res, rej) => {
+        wb.write(path, (err, stats) => {
+            if (err) rej(err);
+            else res(stats);
+        });
+    });
 };
 
 module.exports = createExcel;

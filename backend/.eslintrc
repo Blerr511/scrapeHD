@@ -1,11 +1,13 @@
 {
     "root": true,
+    "extends": "eslint-config-airbnb",
     "env": {
-        "es6": false,
-        "browser": true
+        "es6": true,
+        "browser": true,
+        "node": true
     },
     "parserOptions": {
-        "ecmaVersion": 2020
+        "ecmaVersion": 7
     },
     "rules": {
         "no-unused-vars": ["warn"],
