@@ -116,7 +116,12 @@ body {
     padding: 8px 16px;
     background-color: #e6f5e9;
 }
-
+.downloadContainer > .showMoreContainer {
+    color: black;
+    text-decoration: none;
+    padding: 3px 16px;
+    background-color: #e6f5e9;
+}
 .resultContainer {
     display: flex;
     flex-direction: column;
