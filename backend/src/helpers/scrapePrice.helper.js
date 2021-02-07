@@ -15,11 +15,13 @@ const scrapePrice = async (id) =>
                     ?.textContent === 'Access Denied'
             )
                 return Promise.reject('Access Denied please use proxy');
+
             const price = dom.window.document.body.querySelectorAll(
-                '.price>div>span'
+                '.zone-card #eco-rebate-price .price'
             );
-            if (!price?.length)
+            if (!price.length || !price[1].textContent)
                 return Promise.reject("Model or it's price not found");
+
             return (
                 Number(price[1].textContent) +
                 0.01 * Number(price[2].textContent)

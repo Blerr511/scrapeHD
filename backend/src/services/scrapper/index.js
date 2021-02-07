@@ -16,8 +16,9 @@ class Scrapper {
     priceList = [];
     startTime = null;
     endTime = null;
-    interval = 3600 * 1000;
+    interval = 3600;
     fileLimit = 10;
+    host = '';
     getTimer = () => null;
     get options() {
         return {
@@ -42,36 +43,45 @@ class Scrapper {
 
     setTimerOptions(options) {
         const { endTime, startTime, interval } = options;
-        if (endTime) this.endTime = endTime;
-        if (startTime) this.startTime = startTime;
-        if (interval) this.interval = interval;
-        this.scheduleJob();
+        if (endTime !== undefined) this.endTime = endTime;
+        if (startTime !== undefined) this.startTime = startTime;
+        if (interval) {
+            this.interval = Number(interval);
+            this.scheduleJob(true);
+        }
     }
     setModelList = (modelList) => {
         this.modelList = modelList;
         this.scheduleJob();
     };
-    scheduleJob(fileName) {
-        const { startTime, endTime, interval } = this;
+    isCorrectTime() {
+        const { startTime, endTime } = this;
+        if (!startTime || !endTime) return true;
+        const now = new Date();
+        const startH = Number(startTime.split(':')[0]);
+        const startM = Number(startTime.split(':')[1]);
+        const endH = Number(endTime.split(':')[0]);
+        const endM = Number(endTime.split(':')[1]);
+        if (
+            now.getHours() >= startH &&
+            now.getHours() <= endH &&
+            now.getMinutes() >= startM &&
+            now.getMinutes() <= endM
+        )
+            return true;
+
+        return false;
+    }
+    scheduleJob(isIntervalChange) {
+        const { interval } = this;
         const f = () => {
-            if (!startTime || !endTime) return this.updatePriceList(fileName);
-            const now = new Date();
-            const startH = Number(startTime.split(':')[0]);
-            const startM = Number(startTime.split(':')[1]);
-            const endH = Number(endTime.split(':')[0]);
-            const endM = Number(endTime.split(':')[1]);
-            if (
-                now.getHours() >= startH &&
-                now.getHours() <= endH &&
-                now.getMinutes() >= startM &&
-                now.getMinutes() <= endM
-            ) {
-                this.updatePriceList(fileName);
+            if (this.isCorrectTime()) {
+                this.updatePriceList();
             }
         };
         clearTimeout(this.getTimer());
-        f();
-        this.getTimer = setTimeoutInterval(f, interval);
+        if (!isIntervalChange) f();
+        this.getTimer = setTimeoutInterval(f, interval * 1000);
     }
 
     progress(current, total) {
@@ -81,47 +91,51 @@ class Scrapper {
     addToPriceList = (price) => {
         this.priceList.push(price);
     };
-    updatePriceList = (fileName = 'excel') => {
-        Promise.all(
-            this.modelList.map(async (model, i, modelArray) => {
-                let res = null;
-                const d = await getItem(model);
-                if (d) {
-                    const data = JSON.parse(d);
-                    if (
-                        !data.updatedAt ||
-                        data.updatedAt + this.interval + 5000 < Date.now()
-                    ) {
-                        res = await Scrapper.updateItem(model);
-                    } else res = data;
-                } else {
+    updatePriceList = async (fileName = 'excel') => {
+        this.progress(0, this.modelList.length);
+        this.priceList = [];
+        for (let i = 0; i < this.modelList.length; i++) {
+            const model = this.modelList[i];
+            let res = null;
+            const d = await getItem(model);
+            if (d) {
+                const data = JSON.parse(d);
+                if (
+                    !data.updatedAt ||
+                    data.updatedAt + this.interval * 1000 + 5000 < Date.now()
+                ) {
                     res = await Scrapper.updateItem(model);
-                }
-                this.progress(i + 1, modelArray.length);
-                this.addToPriceList(res);
-                return res;
-            })
-        ).then(async (priceList) => {
-            const filePath = path.join(
-                'static',
-                `${fileName}_${moment().format('YYYY-MM-DD_HH-mm')}(${
-                    priceList.length
-                }).xlsx`
-            );
-            await createExcel(priceList, path.join(filePath));
-            const sortedFL = fs.readdirSync('static').sort((file1, file2) => {
-                const state1 = fs.statSync(path.join('static', file1));
-                const state2 = fs.statSync(path.join('static', file2));
-                return state1.ctime - state2.ctime;
-            });
-            if (sortedFL.length > this.fileLimit) {
-                while (sortedFL.length > this.fileLimit) {
-                    fs.unlinkSync(path.join('static', sortedFL[0]));
-                    sortedFL.splice(0, 1);
-                }
+                } else res = data;
+            } else {
+                res = await Scrapper.updateItem(model);
             }
-            io.emit('filesReady', sortedFL);
+            this.progress(i + 1, this.modelList.length);
+            this.addToPriceList(res);
+        }
+        const { priceList } = this;
+        const filePath = path.join(
+            'static',
+            `${fileName}_${moment().format('YYYY-MM-DD_HH-mm')}(${
+                priceList.length
+            }).xlsx`
+        );
+        await createExcel(priceList, filePath);
+        const sortedFL = fs.readdirSync('static').sort((file1, file2) => {
+            const state1 = fs.statSync(path.join('static', file1));
+            const state2 = fs.statSync(path.join('static', file2));
+            return state1.ctime - state2.ctime;
         });
+        if (sortedFL.length > this.fileLimit) {
+            while (sortedFL.length > this.fileLimit) {
+                fs.unlinkSync(path.join('static', sortedFL[0]));
+                sortedFL.splice(0, 1);
+            }
+        }
+        io.emit('result', { filePath: `${this.host}/${filePath}` });
+        io.emit(
+            'filesReady',
+            sortedFL.map((el) => `${this.host}/${path.join('static', el)}`)
+        );
     };
 
     static async updateItem(model) {
@@ -132,7 +146,10 @@ class Scrapper {
             await setItem(model, JSON.stringify(data));
             return data;
         } catch (error) {
-            setItem(model, JSON.stringify({ error: error.message || error }));
+            await setItem(
+                model,
+                JSON.stringify({ error: error.message || error })
+            );
             return Promise.resolve({
                 model,
                 error: error.message || error,

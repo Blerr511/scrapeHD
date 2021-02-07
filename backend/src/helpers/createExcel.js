@@ -37,7 +37,7 @@ const createExcel = async (priceList, path) => {
         const row = _row + 2;
         ws.cell(row, 1).string(model).style(style);
         if (error) ws.cell(row, 4).string(error).style(errorStyle);
-        else {
+        else if (typeof price === 'number') {
             ws.cell(row, 2).number(price).style(style);
             updatedAt && ws.cell(row, 3).date(new Date(updatedAt));
         }
