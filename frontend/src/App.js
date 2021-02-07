@@ -288,9 +288,9 @@ const App = () => {
                                                     <ListItem key={el}>
                                                         <a href={el} download>
                                                             {
-                                                                el.split('\\')[
+                                                                el.split('/')[
                                                                     el.split(
-                                                                        '\\'
+                                                                        '/'
                                                                     ).length - 1
                                                                 ]
                                                             }
