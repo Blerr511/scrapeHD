@@ -26,6 +26,7 @@ const scrapePrice = async (id) =>
             return data;
         })
         .then(async (data) => {
+            if (process.env.LOGGING === 'true') console.log(data);
             const dom = new JSDOM(data);
             if (
                 dom.window.document.body.querySelector('body>h1')

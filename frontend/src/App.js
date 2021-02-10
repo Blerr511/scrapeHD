@@ -256,7 +256,7 @@ const App = () => {
                                     </a>
                                 )}
                             </div>
-                            {readyFileList?.length && (
+                            {Boolean(readyFileList?.length) && (
                                 <div className="showMoreContainer">
                                     <span
                                         style={{

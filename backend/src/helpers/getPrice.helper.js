@@ -6,7 +6,7 @@ const getPrice = (itemId) =>
             'content-type': 'application/json',
             'x-experience-name': 'major-appliances',
         },
-        body: `{\"operationName\":\"productClientOnlyProduct\",\"variables\":{\"itemId\":\"${'itemId'}\",\"storeId\":\"1861\"},\"query\":\"query productClientOnlyProduct($storeId: String, $itemId: String!, $dataSource: String, $loyaltyMembershipInput: LoyaltyMembershipInput) {\\n  product(itemId: $itemId, dataSource: $dataSource, loyaltyMembershipInput: $loyaltyMembershipInput) {pricing(storeId: $storeId) {  value\\n  }\\n  __typename\\n  }\\n}\\n\"}`,
+        body: `{\"operationName\":\"productClientOnlyProduct\",\"variables\":{\"${itemId}\":\"${'itemId'}\",\"storeId\":\"1861\"},\"query\":\"query productClientOnlyProduct($storeId: String, $itemId: String!, $dataSource: String, $loyaltyMembershipInput: LoyaltyMembershipInput) {\\n  product(itemId: $itemId, dataSource: $dataSource, loyaltyMembershipInput: $loyaltyMembershipInput) {pricing(storeId: $storeId) {  value\\n  }\\n  __typename\\n  }\\n}\\n\"}`,
         method: 'POST',
     })
         .then((data) => data.json())
