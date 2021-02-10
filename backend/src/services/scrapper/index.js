@@ -20,6 +20,12 @@ class Scrapper {
     fileLimit = 10;
     host = '';
     getTimer = () => null;
+    setHostFromSocket = (socket) => {
+        this.host = `${socket.handshake.headers['x-forwarded-proto']}://${socket.handshake.headers.host}`;
+    };
+    getFileUrl = (file) => {
+        return `${this.host}/static/${file}`;
+    };
     get options() {
         return {
             startTime: this.startTime,
@@ -37,7 +43,8 @@ class Scrapper {
                 const state2 = fs.statSync(path.join('static', file2));
                 return state1.ctime - state2.ctime;
             });
-            socket.emit('filesReady', sortedFL);
+            this.setHostFromSocket(socket);
+            socket.emit('filesReady', sortedFL.map(this.getFileUrl));
         });
     }
 
@@ -113,12 +120,10 @@ class Scrapper {
             this.addToPriceList(res);
         }
         const { priceList } = this;
-        const filePath = path.join(
-            'static',
-            `${fileName}_${moment().format('YYYY-MM-DD_HH-mm')}(${
-                priceList.length
-            }).xlsx`
-        );
+        const newFileName = `${fileName}_${moment().format(
+            'YYYY-MM-DD_HH-mm'
+        )}(${priceList.length}).xlsx`;
+        const filePath = path.join('static', newFileName);
         await createExcel(priceList, filePath);
         const sortedFL = fs.readdirSync('static').sort((file1, file2) => {
             const state1 = fs.statSync(path.join('static', file1));
@@ -131,11 +136,8 @@ class Scrapper {
                 sortedFL.splice(0, 1);
             }
         }
-        io.emit('result', { filePath: `${this.host}/${filePath}` });
-        io.emit(
-            'filesReady',
-            sortedFL.map((el) => `${this.host}/${path.join('static', el)}`)
-        );
+        io.emit('result', { filePath: this.getFileUrl(newFileName) });
+        io.emit('filesReady', sortedFL.map(this.getFileUrl));
     };
 
     static async updateItem(model) {
