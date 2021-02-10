@@ -9,7 +9,6 @@ import {
     makeStyles,
     TextField,
     Checkbox,
-    Button,
     List,
     ListItem,
     Typography,
@@ -257,7 +256,7 @@ const App = () => {
                                     </a>
                                 )}
                             </div>
-                            {readyFileList && (
+                            {readyFileList?.length && (
                                 <div className="showMoreContainer">
                                     <span
                                         style={{
