@@ -147,7 +147,6 @@ const App = () => {
         });
         socket.on('filesReady', setReadyFileList);
     }, []);
-    console.log(readyFileList);
     useEffect(() => {
         fetch('/api/options')
             .then((data) => data.json())
