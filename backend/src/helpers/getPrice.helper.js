@@ -1,22 +1,62 @@
 const fetch = require('node-fetch');
 
-const getPrice = (itemId) =>
-    fetch('https://www.homedepot.com/product-information/model', {
+const query = `query searchModel(
+    $pageSize: Int
+    $keyword: String
+) {
+    searchModel(
+        keyword: $keyword
+    ) {
+        products(
+            pageSize: $pageSize
+        ) {
+            itemId
+            availabilityType {
+                discontinued
+                type
+                __typename
+            }
+
+            pricing {
+                value
+                alternatePriceDisplay
+                original
+                message
+                specialBuy
+                unitOfMeasure
+                __typename
+            }
+            __typename
+        }
+        id
+        __typename
+    }
+}
+`;
+const operationName = 'searchModel';
+const url = 'https://www.homedepot.com/product-information/model';
+const getPrice = (itemId) => {
+    const variables = { keyword: itemId, pageSize: 2 };
+    return fetch(url, {
         headers: {
             'content-type': 'application/json',
             'x-experience-name': 'major-appliances',
         },
-        body: `{\"operationName\":\"productClientOnlyProduct\",\"variables\":{\"itemId\":\"${itemId}\",\"storeId\":\"1861\"},\"query\":\"query productClientOnlyProduct($storeId: String, $itemId: String!, $dataSource: String, $loyaltyMembershipInput: LoyaltyMembershipInput) {\\n  product(itemId: $itemId, dataSource: $dataSource, loyaltyMembershipInput: $loyaltyMembershipInput) {pricing(storeId: $storeId) {  value\\n  }\\n  __typename\\n  }\\n}\\n\"}`,
+        body: JSON.stringify({ operationName, query, variables }),
         method: 'POST',
     })
-        .then((data) => data.json())
+        .then((res) => {
+            if (res.status === 403) return Promise.reject('Access Denied');
+            return res.json();
+        })
         .then((data) => {
             if (data.errors)
                 throw new Error(
                     (data.errors[0] && data.errors[0].message) ||
                         'Failed to get product price'
                 );
-            return data?.data?.product?.pricing?.value;
+            return data;
         });
+};
 
 module.exports.getPrice = getPrice;

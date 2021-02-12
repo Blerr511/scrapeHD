@@ -3,6 +3,7 @@ const app = require('services/express');
 const io = require('services/socket');
 const server = http.createServer(app);
 const fs = require('fs');
+
 require('services/scrapper');
 if (!fs.existsSync('./static')) {
     fs.mkdirSync('./static');
