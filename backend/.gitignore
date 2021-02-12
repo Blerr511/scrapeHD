@@ -22,3 +22,5 @@ static/*
 yarn.lock
 .env
 .env.production
+*.log
+**/logs/**

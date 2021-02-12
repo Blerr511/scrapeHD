@@ -21,7 +21,9 @@
         "redis": "^3.0.2",
         "scrape-it": "^5.3.0",
         "scrape-it-core": "^1.0.0",
-        "socket.io": "^3.1.0"
+        "socket.io": "^3.1.0",
+        "winston": "^3.3.3",
+        "winston-daily-rotate-file": "^4.5.0"
     },
     "scripts": {
         "start": "set NODE_PATH=./src&&nodemon -r dotenv-flow/config",

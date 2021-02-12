@@ -1,3 +1,4 @@
+const WLogger = require('loggers/winston');
 const { default: fetch } = require('node-fetch');
 const { getPrice } = require('./getPrice.helper');
 const getInternetId = (data) => {
@@ -25,6 +26,11 @@ const scrapePrice = async (id) =>
             return data;
         })
         .then(async (data) => {
+            WLogger.info(data, {
+                service: 'Scrapper',
+                file: __filename,
+                operation: 'Fetched data',
+            });
             const intId = getInternetId(data);
             if (!intId) {
                 if (data.search(/access denied/gi) === -1)
