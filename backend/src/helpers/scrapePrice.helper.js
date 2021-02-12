@@ -1,4 +1,3 @@
-const { JSDOM } = require('jsdom');
 const { default: fetch } = require('node-fetch');
 const { getPrice } = require('./getPrice.helper');
 const getInternetId = (data) => {
@@ -26,15 +25,11 @@ const scrapePrice = async (id) =>
             return data;
         })
         .then(async (data) => {
-            if (process.env.LOGGING === 'true') console.log(data);
-            const dom = new JSDOM(data);
-            if (
-                dom.window.document.body.querySelector('body>h1')
-                    ?.textContent === 'Access Denied'
-            )
-                return Promise.reject('Access Denied please use proxy');
             const intId = getInternetId(data);
             if (!intId) {
+                if (data.search(/access denied/gi) === -1)
+                    return Promise.reject('Access Denied please use proxy');
+
                 return Promise.reject('Product not found');
             }
 
