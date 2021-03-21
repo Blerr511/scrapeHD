@@ -34,7 +34,7 @@ const useStyles = makeStyles((theme) => ({
         },
     },
 }));
-const setOptions = ({ endTime, fileLimit, interval, startTime }) => {
+const setOptions = ({ endTime, fileLimit, interval, startTime, extended }) => {
     fetch('/api/options', {
         method: 'post',
         headers: {
@@ -45,6 +45,7 @@ const setOptions = ({ endTime, fileLimit, interval, startTime }) => {
             startTime: startTime ? startTime.format('HH:mm') : startTime,
             endTime: endTime ? endTime.format('HH:mm') : endTime,
             interval,
+            extended,
         }),
     });
 };
@@ -57,6 +58,8 @@ const setOptionsIsTime = (v) => {
 };
 const setOptionsFileLimit = (fileLimit) =>
     setOptions({ fileLimit: Number(fileLimit) });
+const setOptionsExtended = (extended) => setOptions({ extended });
+
 const App = () => {
     const $input = useRef(null);
     const $downArrow = useRef(null);
@@ -96,8 +99,9 @@ const App = () => {
     const [isTime, _setIsTime] = useState(false);
     const setIsTime = useDebounce(setOptionsIsTime, 1000, _setIsTime);
     const [fileLimit, _setFileLimit] = useState(10);
+    const [extended, _setExtended] = useState(false);
     const setFileLimit = useDebounce(setOptionsFileLimit, 1000, _setFileLimit);
-
+    const setExtended = useDebounce(setOptionsExtended, 1000, _setExtended);
     const handleUploadFile = (file) => {
         const fileType = file.name.split('.')[1];
         if (fileType !== 'csv') {
@@ -165,10 +169,11 @@ const App = () => {
                         })
                     );
                 }
-                if (data.interval) {
+                if (data.interval !== undefined) {
                     _setInterval(Math.floor(data.interval / 3600));
                 }
-                if (data.fileLimit) _setFileLimit(data.fileLimit);
+                if (data.fileLimit !== undefined) _setFileLimit(data.fileLimit);
+                if (data.extended !== undefined) _setExtended(data.extended);
             });
     }, []);
 
@@ -431,6 +436,19 @@ const App = () => {
                                                     if (v <= 50) {
                                                         setFileLimit(v);
                                                     }
+                                                }}
+                                            />
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <td>Extended info</td>
+                                        <td>
+                                            <Checkbox
+                                                checked={extended}
+                                                onChange={(e) => {
+                                                    setExtended(
+                                                        e.target.checked
+                                                    );
                                                 }}
                                             />
                                         </td>
