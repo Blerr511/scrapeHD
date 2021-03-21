@@ -25,7 +25,7 @@ const createWorkSheet = (wb, columns, data, options) => {
                     ? accessor(data)
                     : data[accessor];
 
-            if (value) {
+            if (value !== null && value !== undefined) {
                 if (type === 'string') {
                     ws.cell(rowIndex, colIndex).string(value);
                 } else if (type === 'number') {
