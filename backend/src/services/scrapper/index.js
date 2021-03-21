@@ -6,6 +6,7 @@ const scrapePrice = require('helpers/scrapePrice.helper');
 const createExcel = require('helpers/createExcel');
 const { setTimeoutInterval } = require('helpers/setTimeoutInterval');
 const io = require('services/socket');
+const redisClient = require('db/connect');
 
 class Scrapper {
     currentProgress = {
@@ -99,6 +100,7 @@ class Scrapper {
         this.priceList.push(price);
     };
     updatePriceList = async (fileName = 'excel') => {
+        redisClient.flushall();
         this.progress(0, this.modelList.length);
         this.priceList = [];
         for (let i = 0; i < this.modelList.length; i++) {

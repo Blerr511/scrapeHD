@@ -24,14 +24,28 @@ const createExcel = async (priceList, path) => {
         },
     });
     const columns = [
-        { header: 'Model', style, accessor: 'model', width: 15, freeze: true },
-        { header: 'Price', style, accessor: 'price' },
+        {
+            header: 'Model',
+            style,
+            accessor: 'model',
+            width: 15,
+            freeze: true,
+            type: 'string',
+        },
+        { header: 'Price', style, accessor: 'price', type: 'number' },
         {
             header: 'Updated at',
             accessor: (data) => new Date(data.updatedAt),
             width: 25,
+            type: 'date',
         },
-        { header: 'Error', style: errorStyle, accessor: 'error', width: 35 },
+        {
+            header: 'Error',
+            style: errorStyle,
+            accessor: 'error',
+            width: 35,
+            type: 'string',
+        },
     ];
     createWorkSheet(wb, columns, priceList, 'Home Depot price list');
 
