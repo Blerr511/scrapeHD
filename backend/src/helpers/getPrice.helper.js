@@ -1,22 +1,25 @@
 const fetch = require('node-fetch');
 
-const query = `query searchModel(
-    $pageSize: Int
-    $keyword: String
-) {
-    searchModel(
-        keyword: $keyword
-    ) {
-        products(
-            pageSize: $pageSize
-        ) {
+const query = `
+    query searchModel($pageSize: Int, $keyword: String) {
+    searchModel(keyword: $keyword) {
+        products(pageSize: $pageSize) {
             itemId
             availabilityType {
                 discontinued
                 type
                 __typename
             }
-
+            details {
+                description
+                collection {
+                    url
+                    collectionId
+                    __typename
+                }
+                highlights
+                __typename
+            }
             pricing {
                 value
                 alternatePriceDisplay
@@ -33,6 +36,7 @@ const query = `query searchModel(
     }
 }
 `;
+
 const operationName = 'searchModel';
 const url = 'https://www.homedepot.com/product-information/model';
 const getPrice = (itemId) => {

@@ -32,6 +32,10 @@ const createWorkSheet = (wb, columns, data, options) => {
                     ws.cell(rowIndex, colIndex).number(value);
                 } else if (type === 'date') {
                     ws.cell(rowIndex, colIndex).date(value.getTime());
+                } else if (type === 'images') {
+                    value.map((url, i) => {
+                        ws.cell(rowIndex, colIndex + i).link(url);
+                    });
                 }
             }
             if (style) ws.cell(rowIndex, colIndex).style(style);

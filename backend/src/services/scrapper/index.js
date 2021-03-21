@@ -7,6 +7,7 @@ const createExcel = require('helpers/createExcel');
 const { setTimeoutInterval } = require('helpers/setTimeoutInterval');
 const io = require('services/socket');
 const redisClient = require('db/connect');
+const { getDetailsById } = require('helpers/getDetailsById.helper');
 
 class Scrapper {
     currentProgress = {
@@ -19,6 +20,7 @@ class Scrapper {
     endTime = null;
     interval = 3600;
     fileLimit = 10;
+    extended = false;
     host = '';
     getTimer = () => null;
     setHostFromSocket = (socket) => {
@@ -33,6 +35,7 @@ class Scrapper {
             endTime: this.endTime,
             interval: this.interval,
             fileLimit: this.fileLimit,
+            extended: this.extended,
         };
     }
     constructor() {
@@ -50,13 +53,14 @@ class Scrapper {
     }
 
     setTimerOptions(options) {
-        const { endTime, startTime, interval } = options;
+        const { endTime, startTime, interval, extended } = options;
         if (endTime !== undefined) this.endTime = endTime;
         if (startTime !== undefined) this.startTime = startTime;
         if (interval) {
             this.interval = Number(interval);
             this.scheduleJob(true);
         }
+        if (extended !== undefined) this.extended = extended;
     }
     setModelList = (modelList) => {
         this.modelList = modelList;
@@ -84,7 +88,7 @@ class Scrapper {
         const { interval } = this;
         const f = () => {
             if (this.isCorrectTime()) {
-                this.updatePriceList();
+                this.updatePriceList('excel');
             }
         };
         clearTimeout(this.getTimer());
@@ -100,7 +104,7 @@ class Scrapper {
         this.priceList.push(price);
     };
     updatePriceList = async (fileName = 'excel') => {
-        redisClient.flushall();
+        const { extended } = this;
         this.progress(0, this.modelList.length);
         this.priceList = [];
         for (let i = 0; i < this.modelList.length; i++) {
@@ -111,12 +115,13 @@ class Scrapper {
                 const data = JSON.parse(d);
                 if (
                     !data.updatedAt ||
-                    data.updatedAt + this.interval * 1000 + 5000 < Date.now()
+                    data.updatedAt + this.interval * 1000 + 5000 < Date.now() ||
+                    (extended && !data.extended)
                 ) {
-                    res = await Scrapper.updateItem(model);
+                    res = await Scrapper.updateItem(model, extended);
                 } else res = data;
             } else {
-                res = await Scrapper.updateItem(model);
+                res = await Scrapper.updateItem(model, extended);
             }
             this.progress(i + 1, this.modelList.length);
             this.addToPriceList(res);
@@ -126,7 +131,7 @@ class Scrapper {
             'YYYY-MM-DD_HH-mm'
         )}(${priceList.length}).xlsx`;
         const filePath = path.join('static', newFileName);
-        await createExcel(priceList, filePath);
+        await createExcel(priceList, filePath, { extended });
         const sortedFL = fs.readdirSync('static').sort((file1, file2) => {
             const state1 = fs.statSync(path.join('static', file1));
             const state2 = fs.statSync(path.join('static', file2));
@@ -142,11 +147,71 @@ class Scrapper {
         io.emit('filesReady', sortedFL.map(this.getFileUrl));
     };
 
-    static async updateItem(model) {
+    static async updateItem(model, extended) {
         try {
-            const price = await scrapePrice(model);
+            const { price, itemId } = await scrapePrice(model);
+
             const updatedAt = Date.now();
-            const data = { model, price, updatedAt };
+            const data = { model, price, updatedAt, extended };
+
+            if (extended) {
+                const response = await getDetailsById(itemId);
+                const {
+                    data: {
+                        product: {
+                            identifiers: {
+                                productLabel: name,
+                                rentalCategory: category,
+                                brandName: brand,
+                                upc,
+                                productType: type,
+                            },
+                            seoDescription: shortDescription,
+                            details: { description: longDescription },
+                            specificationGroup,
+                            pricing: {
+                                value: salePrice,
+                                original: originalPrice,
+                            },
+                            media: { images: img },
+                        },
+                    },
+                } = response;
+
+                const images =
+                    Array.isArray(img) &&
+                    Promise.all[
+                        img.map(({ url, sizes }) => {
+                            const src = url.replace(
+                                '<SIZE>',
+                                sizes[sizes.length - 1]
+                            );
+                        })
+                    ];
+                let dimensions = null;
+                for (let i = 0; i < specificationGroup?.length; i++) {
+                    const spec = specificationGroup[i];
+                    if (String(spec.specTitle).toLowerCase() === 'dimensions')
+                        dimensions = spec.specifications;
+                }
+
+                const details = {
+                    name,
+                    category,
+                    brand,
+                    upc,
+                    type,
+                    shortDescription,
+                    longDescription,
+                    salePrice,
+                    originalPrice,
+                    images,
+                    dimensions,
+                };
+
+                Object.assign(data, details);
+            }
+
             await setItem(model, JSON.stringify(data));
             return data;
         } catch (error) {

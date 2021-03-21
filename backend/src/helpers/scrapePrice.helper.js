@@ -1,7 +1,7 @@
 const WLogger = require('loggers/winston');
 const { getPrice } = require('./getPrice.helper');
 
-const scrapePrice = async (id) => {
+const scrapePrice = async (id, { extended } = { extended: false }) => {
     const data = await getPrice(id);
     WLogger.info(data, { service: 'scrapePrice', file: __filename });
     const {
@@ -9,7 +9,7 @@ const scrapePrice = async (id) => {
             searchModel: { products },
         },
     } = data;
-    if (products.length !== 1) return Promise.reject('Product not found');
+    if (products?.length !== 1) return Promise.reject('Product not found');
     const product = products[0];
     const { pricing, availabilityType } = product;
     if (!pricing) {
@@ -19,7 +19,7 @@ const scrapePrice = async (id) => {
     }
     const { value, original } = pricing;
 
-    return value || original;
+    return { price: value || original, itemId: product.itemId };
 };
 
 module.exports = scrapePrice;
