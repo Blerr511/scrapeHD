@@ -149,10 +149,14 @@ class Scrapper {
 
     static async updateItem(model, extended) {
         try {
-            const { price, itemId } = await scrapePrice(model);
+            const {
+                price,
+                itemId,
+                identifiers: { canonicalUrl },
+            } = await scrapePrice(model);
 
             const updatedAt = Date.now();
-            const data = { model, price, updatedAt, extended };
+            const data = { model, price, updatedAt, extended, canonicalUrl };
 
             if (extended) {
                 const response = await getDetailsById(itemId);
@@ -160,39 +164,82 @@ class Scrapper {
                     data: {
                         product: {
                             identifiers: {
+                                canonicalUrl,
                                 productLabel: name,
-                                rentalCategory: category,
                                 brandName: brand,
                                 upc,
-                                productType: type,
                             },
                             seoDescription: shortDescription,
-                            details: { description: longDescription },
+                            details: {
+                                description: _longDescription,
+                                highlights,
+                            },
                             specificationGroup,
                             pricing: {
                                 value: salePrice,
                                 original: originalPrice,
                             },
                             media: { images: img },
+                            taxonomy: tax,
                         },
                     },
                 } = response;
 
+                let longDescription = _longDescription;
+
+                if (Array.isArray(highlights))
+                    longDescription += `\n${highlights.join('\n')}`;
                 const images =
                     Array.isArray(img) &&
-                    Promise.all[
-                        img.map(({ url, sizes }) => {
-                            const src = url.replace(
-                                '<SIZE>',
-                                sizes[sizes.length - 1]
-                            );
-                        })
-                    ];
-                let dimensions = null;
+                    img.map(({ url, sizes }) =>
+                        url.replace('<SIZE>', sizes[sizes.length - 1])
+                    );
+
+                let color, width, height, depth, category, type;
                 for (let i = 0; i < specificationGroup?.length; i++) {
                     const spec = specificationGroup[i];
-                    if (String(spec.specTitle).toLowerCase() === 'dimensions')
-                        dimensions = spec.specifications;
+                    if (String(spec.specTitle).toLowerCase() === 'dimensions') {
+                        const d = spec.specifications?.find((v) =>
+                            String(v.specName).includes('Product Depth')
+                        );
+                        const w = spec.specifications?.find((v) =>
+                            String(v.specName).includes('Product Width')
+                        );
+                        const h = spec.specifications?.find((v) =>
+                            String(v.specName).includes('Product Height')
+                        );
+                        depth =
+                            d?.specValue +
+                            (d.specName.includes('(in.)') ? ' in' : '');
+
+                        width =
+                            w?.specValue +
+                            (w.specName.includes('(in.)') ? ' in' : '');
+                        height =
+                            h?.specValue +
+                            (h.specName.includes('(in.)') ? ' in' : '');
+                    } else if (
+                        String(spec.specTitle).toLowerCase() === 'details'
+                    )
+                        color =
+                            spec.specifications?.find(
+                                (v) =>
+                                    String(v.specName).toLowerCase() ===
+                                    'color/finish'
+                            )?.specValue || 'none';
+                    category = spec.specifications?.find((v) =>
+                        String(v.specName).includes('Appliance Category')
+                    )?.specValue;
+                    type = spec.specifications?.find((v) =>
+                        String(v.specName).includes('Appliance Type')
+                    )?.specValue;
+                }
+
+                if (!type && Array.isArray(tax.breadCrumbs)) {
+                    type = tax.breadCrumbs.reverse()[0]?.label;
+                }
+                if (!category && Array.isArray(tax.breadCrumbs)) {
+                    category = tax.breadCrumbs.reverse()[1]?.label;
                 }
 
                 const details = {
@@ -206,7 +253,12 @@ class Scrapper {
                     salePrice,
                     originalPrice,
                     images,
-                    dimensions,
+                    color,
+                    canonicalUrl,
+                    width,
+                    height,
+                    depth,
+                    type,
                 };
 
                 Object.assign(data, details);
@@ -230,4 +282,5 @@ class Scrapper {
 
 const ScraperService = new Scrapper();
 
-module.exports = ScraperService;
+module.exports.Scrapper = Scrapper;
+module.exports.default = ScraperService;

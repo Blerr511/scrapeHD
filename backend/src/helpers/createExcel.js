@@ -1,124 +1,117 @@
 const xl = require('excel4node');
 const createWorkSheet = require('./createWorkSheet');
+const ExcelJS = require('exceljs');
 
 const createExcel = async (
     priceList,
     path,
     { extended } = { extended: false }
 ) => {
-    var wb = new xl.Workbook({ dateFormat: 'm/d/yy hh:mm:ss' });
-    const style = wb.createStyle({
-        font: {
-            size: 12,
-        },
-        numberFormat: '$#,##0.00; ($#,##0.00); -',
-        alignment: {
-            wrapText: true,
-            horizontal: 'center',
-        },
+    const wb = new ExcelJS.Workbook();
+    wb.created = new Date();
+    wb.creator = 'Scrapper';
+    priceList.forEach((el) => {
+        el.updatedAt = new Date(el.updatedAt);
+        if (el.canonicalUrl)
+            el.model = {
+                text: el.model,
+                hyperlink: `https://www.homedepot.com${el.canonicalUrl}`,
+                tooltip: `www.homedepot.com${el.canonicalUrl}`,
+            };
+        if (Array.isArray(el.images)) {
+            el.images = el.images.join('\n');
+        }
     });
-    const errorStyle = wb.createStyle({
-        font: {
-            color: '#FF0800',
-            size: 12,
-        },
-        alignment: {
-            wrapText: true,
-            horizontal: 'center',
-        },
-    });
+    const ws = wb.addWorksheet(extended ? 'Details' : 'PriceList');
+    ws.columns = getColumns(extended);
+    ws.addRows(priceList);
+    const d = await wb.xlsx.writeFile(path);
+    return d;
+};
+
+module.exports = createExcel;
+
+function getColumns(extended) {
     const columns = [
         {
             header: 'Model',
-            style,
-            accessor: 'model',
+            key: 'model',
             width: 15,
-            freeze: true,
-            type: 'string',
         },
-        { header: 'Price', style, accessor: 'price', type: 'number' },
+        { header: 'Price', key: 'price', style: { numFmt: '0.00$' } },
         {
             header: 'Updated at',
-            accessor: (data) => new Date(data.updatedAt),
+            key: 'updatedAt',
             width: 25,
-            type: 'date',
         },
         {
             header: 'Error',
-            style: errorStyle,
-            accessor: 'error',
+            key: 'error',
             width: 35,
-            type: 'string',
+            style: {
+                font: {
+                    color: { argb: 'FFFF0000' },
+                },
+            },
         },
     ];
-
     if (extended) {
         columns.splice(1, 1);
         columns.push(
             ...[
                 {
                     header: 'Model name',
-                    accessor: 'name',
-                    type: 'string',
-                    style,
+                    key: 'name',
                 },
                 {
                     header: 'Category',
-                    accessor: 'category',
-                    type: 'string',
-                    style,
+                    key: 'category',
                 },
-                { header: 'Brand', accessor: 'brand', type: 'string', style },
-                { header: 'UPC', accessor: 'upc', type: 'string', style },
+                {
+                    header: 'Type',
+                    key: 'type',
+                },
+                { header: 'Brand', key: 'brand' },
+                { header: 'UPC', key: 'upc' },
                 {
                     header: 'Short Description',
-                    accessor: 'shortDescription',
-                    type: 'string',
+                    key: 'shortDescription',
                     width: 25,
-                    style,
                 },
                 {
                     header: 'Long Description',
-                    accessor: 'longDescription',
-                    type: 'string',
+                    key: 'longDescription',
                     width: 25,
-                    style,
                 },
                 {
                     header: 'Sale Price',
-                    accessor: 'salePrice',
-                    type: 'number',
-                    style,
+                    key: 'salePrice',
+                    style: { numFmt: '0.00$' },
                 },
                 {
                     header: 'Original Price',
-                    accessor: 'originalPrice',
-                    type: 'number',
-                    style,
+                    key: 'originalPrice',
+                    style: { numFmt: '0.00$' },
                 },
                 {
-                    header: 'Dimension Specifications',
-                    accessor: (data) =>
-                        Array.isArray(data.dimensions) &&
-                        data.dimensions.map(
-                            ({ specName, specValue }) =>
-                                `${specName} - ${specValue}\n`
-                        ),
-                    type: 'string',
-                    style,
+                    header: 'Width',
+                    key: 'width',
                 },
-                { header: 'Images', accessor: 'images', type: 'images', style },
+                {
+                    header: 'Height',
+                    key: 'height',
+                },
+                {
+                    header: 'Depth',
+                    key: 'depth',
+                },
+                {
+                    header: 'Color',
+                    key: 'color',
+                },
+                { header: 'Images', key: 'images' },
             ]
         );
     }
-    createWorkSheet(wb, columns, priceList, 'Home Depot price list');
-
-    return new Promise((res, rej) => {
-        wb.write(path, (err, stats) => {
-            if (err) rej(err);
-            else res(stats);
-        });
-    });
-};
-
-module.exports = createExcel;
+    return columns;
+}

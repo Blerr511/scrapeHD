@@ -1,4 +1,4 @@
-const scrapper = require('services/scrapper');
+const scrapper = require('services/scrapper').default;
 
 const updateScrapperOptions = async (req, res, next) => {
     scrapper.setTimerOptions(req.body);

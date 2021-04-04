@@ -20,6 +20,10 @@ const query = `
                 highlights
                 __typename
             }
+            identifiers {
+                canonicalUrl
+                __typename
+            }
             pricing {
                 value
                 alternatePriceDisplay

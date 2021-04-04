@@ -1,3 +1,4 @@
+const redisClient = require('db/connect');
 const fetch = require('node-fetch');
 const operationName = 'productClientOnlyProduct';
 const query = `

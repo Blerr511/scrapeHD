@@ -19,7 +19,7 @@ const scrapePrice = async (id, { extended } = { extended: false }) => {
     }
     const { value, original } = pricing;
 
-    return { price: value || original, itemId: product.itemId };
+    return { price: value || original, itemId: product.itemId, ...product };
 };
 
 module.exports = scrapePrice;

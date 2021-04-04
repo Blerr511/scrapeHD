@@ -1,4 +1,4 @@
-const scrapper = require('services/scrapper');
+const scrapper = require('services/scrapper').default;
 
 const uploadNewDataController = async (req, res, next) => {
     const host = `${req.protocol}://${req.get('host')}`;
