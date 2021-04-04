@@ -1,5 +1,3 @@
-const xl = require('excel4node');
-const createWorkSheet = require('./createWorkSheet');
 const ExcelJS = require('exceljs');
 
 const createExcel = async (
@@ -62,17 +60,20 @@ function getColumns(extended) {
                 {
                     header: 'Model name',
                     key: 'name',
+                    width: 25,
                 },
                 {
                     header: 'Category',
                     key: 'category',
+                    width: 20,
                 },
                 {
                     header: 'Type',
                     key: 'type',
+                    width: 20,
                 },
-                { header: 'Brand', key: 'brand' },
-                { header: 'UPC', key: 'upc' },
+                { header: 'Brand', key: 'brand', width: 20 },
+                { header: 'UPC', key: 'upc', width: 15 },
                 {
                     header: 'Short Description',
                     key: 'shortDescription',
@@ -108,8 +109,9 @@ function getColumns(extended) {
                 {
                     header: 'Color',
                     key: 'color',
+                    width: 15,
                 },
-                { header: 'Images', key: 'images' },
+                { header: 'Images', key: 'images', width: 150 },
             ]
         );
     }
