@@ -1,4 +1,3 @@
-const { setItem, getItem } = require('db/helpers');
 const path = require('path');
 const fs = require('fs');
 const moment = require('moment');
@@ -6,8 +5,8 @@ const scrapePrice = require('helpers/scrapePrice.helper');
 const createExcel = require('helpers/createExcel');
 const { setTimeoutInterval } = require('helpers/setTimeoutInterval');
 const io = require('services/socket');
-const redisClient = require('db/connect');
 const { getDetailsById } = require('helpers/getDetailsById.helper');
+const { default: getReviewsHelper } = require('helpers/getReviews.helper');
 
 class Scrapper {
     currentProgress = {
@@ -21,6 +20,8 @@ class Scrapper {
     interval = 3600;
     fileLimit = 10;
     extended = false;
+    reviews = false;
+    reviewsCount = 1000;
     host = '';
     getTimer = () => null;
     setHostFromSocket = (socket) => {
@@ -36,6 +37,8 @@ class Scrapper {
             interval: this.interval,
             fileLimit: this.fileLimit,
             extended: this.extended,
+            reviews: this.reviews,
+            reviewsCount: this.reviewsCount,
         };
     }
     constructor() {
@@ -53,7 +56,14 @@ class Scrapper {
     }
 
     setTimerOptions(options) {
-        const { endTime, startTime, interval, extended } = options;
+        const {
+            endTime,
+            startTime,
+            interval,
+            extended,
+            reviews,
+            reviewsCount,
+        } = options;
         if (endTime !== undefined) this.endTime = endTime;
         if (startTime !== undefined) this.startTime = startTime;
         if (interval) {
@@ -61,6 +71,8 @@ class Scrapper {
             this.scheduleJob(true);
         }
         if (extended !== undefined) this.extended = extended;
+        if (reviews !== undefined) this.reviews = reviews;
+        if (reviewsCount !== undefined) this.reviewsCount = reviewsCount;
     }
     setModelList = (modelList) => {
         this.modelList = modelList;
@@ -104,25 +116,17 @@ class Scrapper {
         this.priceList.push(price);
     };
     updatePriceList = async (fileName = 'excel') => {
-        const { extended } = this;
+        const { extended, reviews, reviewsCount } = this;
         this.progress(0, this.modelList.length);
         this.priceList = [];
         for (let i = 0; i < this.modelList.length; i++) {
             const model = this.modelList[i];
-            let res = null;
-            const d = await getItem(model);
-            if (d) {
-                const data = JSON.parse(d);
-                if (
-                    !data.updatedAt ||
-                    data.updatedAt + this.interval * 1000 + 5000 < Date.now() ||
-                    (extended && !data.extended)
-                ) {
-                    res = await Scrapper.updateItem(model, extended);
-                } else res = data;
-            } else {
-                res = await Scrapper.updateItem(model, extended);
-            }
+            let res = await Scrapper.updateItem(
+                model,
+                extended,
+                reviews,
+                reviewsCount
+            );
             this.progress(i + 1, this.modelList.length);
             this.addToPriceList(res);
         }
@@ -131,7 +135,7 @@ class Scrapper {
             'YYYY-MM-DD_HH-mm'
         )}(${priceList.length}).xlsx`;
         const filePath = path.join('static', newFileName);
-        await createExcel(priceList, filePath, { extended });
+        await createExcel(priceList, filePath, { extended, reviews });
         const sortedFL = fs.readdirSync('static').sort((file1, file2) => {
             const state1 = fs.statSync(path.join('static', file1));
             const state2 = fs.statSync(path.join('static', file2));
@@ -147,7 +151,7 @@ class Scrapper {
         io.emit('filesReady', sortedFL.map(this.getFileUrl));
     };
 
-    static async updateItem(model, extended) {
+    static async updateItem(model, extended, reviews, reviewsCount) {
         try {
             const {
                 price,
@@ -156,7 +160,7 @@ class Scrapper {
             } = await scrapePrice(model);
 
             const updatedAt = Date.now();
-            const data = { model, price, updatedAt, extended, canonicalUrl };
+            const data = { model, price, updatedAt, canonicalUrl };
 
             if (extended) {
                 const response = await getDetailsById(itemId);
@@ -263,14 +267,13 @@ class Scrapper {
 
                 Object.assign(data, details);
             }
+            if (reviews) {
+                const reviews = await getReviewsHelper(itemId, reviewsCount);
+                Object.assign(data, { reviews });
+            }
 
-            await setItem(model, JSON.stringify(data));
             return data;
         } catch (error) {
-            await setItem(
-                model,
-                JSON.stringify({ error: error.message || error })
-            );
             return Promise.resolve({
                 model,
                 error: error.message || error,

@@ -3,7 +3,7 @@ const ExcelJS = require('exceljs');
 const createExcel = async (
     priceList,
     path,
-    { extended } = { extended: false }
+    { extended, reviews } = { extended: false, reviews: false }
 ) => {
     const wb = new ExcelJS.Workbook();
     wb.created = new Date();
@@ -19,9 +19,23 @@ const createExcel = async (
         if (Array.isArray(el.images)) {
             el.images = el.images.join('\n');
         }
+        if (Array.isArray(el.reviews)) {
+            el.reviews = el.reviews
+                .map(
+                    ({
+                        Rating,
+                        RatingRange,
+                        UserNickname,
+                        Title,
+                        ReviewText,
+                    }) =>
+                        `${UserNickname}\n\n${Rating}/${RatingRange}\n\n${Title}\n\n${ReviewText}`
+                )
+                .join('\n ------------------------------- \n');
+        }
     });
     const ws = wb.addWorksheet(extended ? 'Details' : 'PriceList');
-    ws.columns = getColumns(extended);
+    ws.columns = getColumns(extended, reviews);
     ws.addRows(priceList);
     const d = await wb.xlsx.writeFile(path);
     return d;
@@ -29,7 +43,7 @@ const createExcel = async (
 
 module.exports = createExcel;
 
-function getColumns(extended) {
+function getColumns(extended, reviews) {
     const columns = [
         {
             header: 'Model',
@@ -114,6 +128,9 @@ function getColumns(extended) {
                 { header: 'Images', key: 'images', width: 150 },
             ]
         );
+    }
+    if (reviews) {
+        columns.push({ header: 'Reviews', key: 'reviews', width: 100 });
     }
     return columns;
 }

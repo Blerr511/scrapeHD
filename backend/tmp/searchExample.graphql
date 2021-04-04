@@ -1,13 +1,6 @@
-query searchModel(
-    $pageSize: Int
-    $keyword: String
-) {
-    searchModel(
-        keyword: $keyword
-    ) {
-        products(
-            pageSize: $pageSize
-        ) {
+query searchModel($pageSize: Int, $keyword: String) {
+    searchModel(keyword: $keyword) {
+        products(pageSize: $pageSize) {
             itemId
             availabilityType {
                 discontinued
@@ -27,6 +20,41 @@ query searchModel(
             __typename
         }
         id
+        __typename
+    }
+}
+
+query reviewSentiments($itemId: String!) {
+    reviewSentiments(itemId: $itemId) {
+        Results {
+            Feature
+            SentimentType
+            TotalResults
+            ReviewIds
+            __typename
+        }
+        BrandName
+        AverageBrandRating
+        TotalReviewCount
+        __typename
+    }
+}
+
+query reviews($itemId: String!, $startIndex: Int) {
+    reviews(itemId: $itemId, startIndex: $startIndex) {
+        Results {
+            IsRecommended
+            ProductId
+            SubmissionTime
+            Title
+            Rating
+            RatingRange
+            ReviewText
+            UserNickname
+            __typename
+        }
+
+        TotalResults
         __typename
     }
 }

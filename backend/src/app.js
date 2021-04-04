@@ -3,6 +3,8 @@ const app = require('services/express');
 const io = require('services/socket');
 const server = http.createServer(app);
 const fs = require('fs');
+const { Scrapper } = require('services/scrapper');
+const { default: getReviewsHelper } = require('helpers/getReviews.helper');
 
 require('services/scrapper');
 if (!fs.existsSync('./static')) {
