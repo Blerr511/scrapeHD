@@ -2,7 +2,7 @@ import React, { useCallback, useEffect, useRef, useState } from 'react';
 import Loading from './components/Loading';
 import Progress from './components/Progress';
 import socket from './helpers/socket/createConnection';
-import { Settings } from '@material-ui/icons';
+import { CheckBox, Settings } from '@material-ui/icons';
 import {
     Popover,
     Card,
@@ -34,7 +34,15 @@ const useStyles = makeStyles((theme) => ({
         },
     },
 }));
-const setOptions = ({ endTime, fileLimit, interval, startTime, extended }) => {
+const setOptions = ({
+    endTime,
+    fileLimit,
+    interval,
+    startTime,
+    extended,
+    reviews,
+    reviewsCount,
+}) => {
     fetch('/api/options', {
         method: 'post',
         headers: {
@@ -46,6 +54,8 @@ const setOptions = ({ endTime, fileLimit, interval, startTime, extended }) => {
             endTime: endTime ? endTime.format('HH:mm') : endTime,
             interval,
             extended,
+            reviews,
+            reviewsCount,
         }),
     });
 };
@@ -59,6 +69,10 @@ const setOptionsIsTime = (v) => {
 const setOptionsFileLimit = (fileLimit) =>
     setOptions({ fileLimit: Number(fileLimit) });
 const setOptionsExtended = (extended) => setOptions({ extended });
+
+const setOptionsReviews = (reviews) => setOptions({ reviews });
+
+const setOptionsReviewsCount = (reviewsCount) => setOptions({ reviewsCount });
 
 const App = () => {
     const $input = useRef(null);
@@ -100,8 +114,16 @@ const App = () => {
     const setIsTime = useDebounce(setOptionsIsTime, 1000, _setIsTime);
     const [fileLimit, _setFileLimit] = useState(10);
     const [extended, _setExtended] = useState(false);
+    const [reviews, _setReviews] = useState(false);
+    const [reviewsCount, _setReviewsCount] = useState(0);
     const setFileLimit = useDebounce(setOptionsFileLimit, 1000, _setFileLimit);
     const setExtended = useDebounce(setOptionsExtended, 1000, _setExtended);
+    const setReviews = useDebounce(setOptionsReviews, 1000, _setReviews);
+    const setReviewsCount = useDebounce(
+        setOptionsReviewsCount,
+        1000,
+        _setReviewsCount
+    );
     const handleUploadFile = (file) => {
         const fileType = file.name.split('.')[1];
         if (fileType !== 'csv') {
@@ -174,6 +196,9 @@ const App = () => {
                 }
                 if (data.fileLimit !== undefined) _setFileLimit(data.fileLimit);
                 if (data.extended !== undefined) _setExtended(data.extended);
+                if (data.reviews !== undefined) _setReviews(data.reviews);
+                if (data.reviewsCount !== undefined)
+                    _setReviewsCount(data.reviewsCount);
             });
     }, []);
 
@@ -453,6 +478,35 @@ const App = () => {
                                             />
                                         </td>
                                     </tr>
+                                    <tr>
+                                        <td>Reviews</td>
+                                        <td>
+                                            <Checkbox
+                                                checked={reviews}
+                                                onChange={(e) => {
+                                                    setReviews(
+                                                        e.target.checked
+                                                    );
+                                                }}
+                                            />
+                                        </td>
+                                    </tr>
+                                    {reviews && (
+                                        <tr>
+                                            <td>Reviews max count</td>
+                                            <td>
+                                                <TextField
+                                                    type="number"
+                                                    value={reviewsCount}
+                                                    onChange={(event) => {
+                                                        const v =
+                                                            event.target.value;
+                                                        setReviewsCount(v);
+                                                    }}
+                                                />
+                                            </td>
+                                        </tr>
+                                    )}
                                 </tbody>
                             </table>
                         </Card>

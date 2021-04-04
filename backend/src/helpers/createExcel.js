@@ -28,8 +28,11 @@ const createExcel = async (
                         UserNickname,
                         Title,
                         ReviewText,
+                        error,
                     }) =>
-                        `${UserNickname}\n\n${Rating}/${RatingRange}\n\n${Title}\n\n${ReviewText}`
+                        error
+                            ? String(error)
+                            : `${UserNickname}\n\n${Rating}/${RatingRange}\n\n${Title}\n\n${ReviewText}`
                 )
                 .join('\n ------------------------------- \n');
         }
