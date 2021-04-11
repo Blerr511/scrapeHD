@@ -5,7 +5,10 @@ const scrapePrice = require('helpers/scrapePrice.helper');
 const createExcel = require('helpers/createExcel');
 const { setTimeoutInterval } = require('helpers/setTimeoutInterval');
 const io = require('services/socket');
-const { getDetailsById } = require('helpers/getDetailsById.helper');
+const {
+    getDetailsById,
+    getFullDescription,
+} = require('helpers/getDetailsById.helper');
 const { default: getReviewsHelper } = require('helpers/getReviews.helper');
 
 class Scrapper {
@@ -174,10 +177,7 @@ class Scrapper {
                                 upc,
                             },
                             seoDescription: shortDescription,
-                            details: {
-                                description: _longDescription,
-                                highlights,
-                            },
+                            details: { description, highlights },
                             specificationGroup,
                             pricing: {
                                 value: salePrice,
@@ -189,10 +189,13 @@ class Scrapper {
                     },
                 } = response;
 
-                let longDescription = _longDescription;
+                let {
+                    fullDescription: longDescription,
+                } = await getFullDescription({
+                    canonicalUrl,
+                    description,
+                });
 
-                if (Array.isArray(highlights))
-                    longDescription += `\n${highlights.join('\n')}`;
                 const images =
                     Array.isArray(img) &&
                     img.map(({ url, sizes }) =>

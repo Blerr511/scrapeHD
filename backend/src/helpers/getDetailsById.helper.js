@@ -1,3 +1,4 @@
+const { JSDOM } = require('jsdom');
 const fetch = require('node-fetch');
 const operationName = 'productClientOnlyProduct';
 const query = `
@@ -223,4 +224,23 @@ const getDetailsById = async (itemId) => {
     return det;
 };
 
+const getFullDescription = async ({ canonicalUrl, description }) => {
+    try {
+        const dom = await JSDOM.fromURL(
+            `https://www.homedepot.com${canonicalUrl}`
+        );
+
+        const fullDescription =
+            [...dom.window.document.getElementsByTagName('div')].find((div) =>
+                div.textContent.startsWith(description)
+            )?.textContent || 'Failed to load description';
+
+        return { fullDescription };
+    } catch (error) {
+        console.error(error);
+        return { fullDescription: 'Failed to load description' };
+    }
+};
+
 module.exports.getDetailsById = getDetailsById;
+module.exports.getFullDescription = getFullDescription;
