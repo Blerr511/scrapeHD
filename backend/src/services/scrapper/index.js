@@ -176,7 +176,6 @@ class Scrapper {
                                 brandName: brand,
                                 upc,
                             },
-                            seoDescription: shortDescription,
                             details: { description, highlights },
                             specificationGroup,
                             pricing: {
@@ -191,6 +190,7 @@ class Scrapper {
 
                 let {
                     fullDescription: longDescription,
+                    shortDescription,
                 } = await getFullDescription({
                     canonicalUrl,
                     description,

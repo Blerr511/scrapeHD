@@ -235,10 +235,26 @@ const getFullDescription = async ({ canonicalUrl, description }) => {
                 div.textContent.startsWith(description)
             )?.textContent || 'Failed to load description';
 
-        return { fullDescription };
+        const shortDescription = [
+            ...dom.window.document.querySelectorAll(
+                '#specifications > .grid > .grid .kpf__specs > .kpf__specblock  .kpf__specblock'
+            ),
+        ]
+            .map((el) => {
+                const name = el.querySelector('.kpf__name').textContent;
+                const value = el.querySelector('.kpf__value').textContent;
+
+                return `${name} - ${value}`;
+            })
+            .join('\n');
+
+        return { fullDescription, shortDescription };
     } catch (error) {
         console.error(error);
-        return { fullDescription: 'Failed to load description' };
+        return {
+            fullDescription: 'Failed to load description',
+            shortDescription: 'Failed to load description',
+        };
     }
 };
 
